@@ -1,0 +1,48 @@
+{
+  "name": "postcss-obfuscate-custom-properties",
+  "version": "0.1.0",
+  "description": "This PostCSS plugin replaces the names of custom properties with hard-to-guess characters",
+  "keywords": [
+    "postcss",
+    "css",
+    "postcss-plugin",
+    "postcss-obfuscate-custom-properties"
+  ],
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "swc src -d dist",
+    "unit": "node --test index.test.js",
+    "test": "npm run unit && eslint ./dist",
+    "format": "prettier --write 'src/**/*.ts'"
+  },
+  "author": "minagishl",
+  "license": "MIT",
+  "repository": "minagishl/postcss-obfuscate-custom-properties",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "postcss": "^8.4.27"
+  },
+  "devDependencies": {
+    "@swc/cli": "^0.1.63",
+    "@swc/core": "^1.3.100",
+    "@types/node": "^20.10.4",
+    "eslint": "^8.47.0",
+    "postcss": "^8.4.27",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.3"
+  },
+  "eslintConfig": {
+    "parserOptions": {
+      "ecmaVersion": 2017
+    },
+    "env": {
+      "node": true,
+      "es6": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ]
+  }
+}
