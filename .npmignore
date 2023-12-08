@@ -10,4 +10,4 @@ coverage/
 .swcrc
 .prettierrc
 tsconfig.json
-
+src/
