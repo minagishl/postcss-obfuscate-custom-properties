@@ -52,7 +52,7 @@ module.exports = {
 | prefix | string   | ""       | Prefix for custom properties.                      |
 | suffix | string   | ""       | Suffix for custom properties.                      |
 | ignore | string[] | []       | Array of custom properties to ignore.              |
-| outpit | string   | ""       | Output destination for json files                  |
+| output | string   | ""       | Output destination for json files                  |
 
 ## License
 
