@@ -10,7 +10,12 @@ type Options = {
   suffix?: string;
   ignore?: string[];
   output?: string;
-  inspect?: boolean;
+  inspect?: boolean; // No description in readme.md
+  speedPriority?: boolean;
+  ignoreRegex?: string[];
+  ignoreSelectors?: string[];
+  ignoreSelectorsRegex?: string[];
+  preRun?: () => Promise<void>;
   callback?: () => void;
 };
 
@@ -30,7 +35,12 @@ const plugin = (opt: any = {}) => {
       const ignore = options.ignore || [];
       const output = options.output || '';
       const inspect = options.inspect || false;
-      const callback = options.callback || (() => {});
+      const speedPriority = options.speedPriority || false;
+      const ignoreRegex = options.ignoreRegex || [];
+      const ignoreSelectors = options.ignoreSelectors || [];
+      const IgnoreSelectorsRegex = options.ignoreSelectorsRegex || [];
+      const preRun = options.preRun || (() => Promise.resolve());
+      const callback = options.callback || function () {};
 
       // Validate options
       if (length > 64) {
@@ -49,31 +59,44 @@ const plugin = (opt: any = {}) => {
         }
       }
 
+      // Run preRun callback
+      preRun();
+
       // First pass: collect custom properties and generate hashes
       root.walkRules((rule: any) => {
-        rule.walkDecls((decl: any) => {
-          if (decl.prop.startsWith('--') && enable && !ignore.includes(decl.prop)) {
-            // Length of hash characters
-            const hashLength = length - prefix.length - suffix.length;
+        if (
+          !ignoreSelectors.includes(rule.selector) &&
+          (speedPriority || !IgnoreSelectorsRegex.some((regex) => new RegExp(regex).test(rule.selector)))
+        ) {
+          rule.walkDecls((decl: any) => {
+            if (
+              decl.prop.startsWith('--') &&
+              enable &&
+              !ignore.includes(decl.prop) &&
+              (speedPriority || !ignoreRegex.some((regex) => new RegExp(regex).test(decl.prop)))
+            ) {
+              // Length of hash characters
+              const hashLength = length - prefix.length - suffix.length;
 
-            // Hash method
-            if (method === 'random') {
-              if (!Object.prototype.hasOwnProperty.call(mapping, decl.prop)) {
-                let hash;
-                do {
-                  hash = createHash('sha256')
-                    .update(decl.prop + getRandomInt(100))
-                    .digest('hex')
-                    .slice(0, hashLength);
-                } while (Object.values(mapping).includes(`--${prefix + hash + suffix}`));
-                mapping[decl.prop] = `--${prefix + hash + suffix}`;
+              // Hash method
+              if (method === 'random') {
+                if (!Object.prototype.hasOwnProperty.call(mapping, decl.prop)) {
+                  let hash;
+                  do {
+                    hash = createHash('sha256')
+                      .update(decl.prop + getRandomInt(100))
+                      .digest('hex')
+                      .slice(0, hashLength);
+                  } while (Object.values(mapping).includes(`--${prefix + hash + suffix}`));
+                  mapping[decl.prop] = `--${prefix + hash + suffix}`;
+                }
+              } else {
+                mapping[decl.prop] = '--' + prefix + decl.prop.substring(2) + suffix;
               }
-            } else {
-              mapping[decl.prop] = '--' + prefix + decl.prop.substring(2) + suffix;
+              decl.prop = mapping[decl.prop];
             }
-            decl.prop = mapping[decl.prop];
-          }
-        });
+          });
+        }
       });
 
       // Write mapping to file

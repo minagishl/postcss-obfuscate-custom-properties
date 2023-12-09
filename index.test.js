@@ -10,6 +10,9 @@ const options = {
   // Options
   length: 6,
   method: 'random',
+  // ignoreRegex: [/foreground$/],
+  // ignoreSelectorsRegex: [/::after$/],
+  // speedPriority: false,
 };
 
 async function run(input, opts = {}, type) {
