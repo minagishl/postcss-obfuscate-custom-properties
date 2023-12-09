@@ -3,6 +3,7 @@ npm-debug.log
 package-lock.json
 yarn.lock
 
+.vscode
 *.test.js
 .github
 .editorconfig
@@ -11,3 +12,4 @@ coverage/
 .prettierrc
 tsconfig.json
 src/
+test/

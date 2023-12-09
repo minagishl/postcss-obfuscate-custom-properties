@@ -1,6 +1,6 @@
 {
   "name": "postcss-obfuscate-custom-properties",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "description": "This PostCSS plugin replaces the names of custom properties with hard-to-guess characters",
   "keywords": [
     "postcss",
@@ -9,9 +9,12 @@
     "postcss-obfuscate-custom-properties"
   ],
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "swc src -d dist",
-    "unit": "node --test index.test.js",
+    "build": "tsc",
+    "minify": "terser dist/index.js --mangle -o dist/index.js",
+    "dev": "swc src -d dist",
+    "unit": "npm run dev && node --test index.test.js",
     "test": "npm run unit && eslint ./dist",
     "format": "prettier --write 'src/**/*.ts'"
   },
@@ -31,6 +34,7 @@
     "eslint": "^8.47.0",
     "postcss": "^8.4.27",
     "prettier": "^3.1.0",
+    "terser": "^5.26.0",
     "typescript": "^5.3.3"
   },
   "eslintConfig": {

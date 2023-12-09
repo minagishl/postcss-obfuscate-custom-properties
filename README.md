@@ -2,8 +2,6 @@
 
 This plugin replaces the names of CSS custom properties with hard-to-guess strings.
 
-[PostCSS]: https://github.com/postcss/postcss
-
 ```css
 :root {
   --foo: #fff;
@@ -23,7 +21,7 @@ This plugin replaces the names of CSS custom properties with hard-to-guess strin
 **Step 1:** Install plugin:
 
 ```sh
-npm install --save-dev postcss postcss-obfuscate-custom-properties
+npm  install  --save-dev  postcss  postcss-obfuscate-custom-properties
 ```
 
 **Step 2:** Check your project for existing PostCSS config: `postcss.config.js`
@@ -37,11 +35,28 @@ and set this plugin in settings.
 
 ```diff
 module.exports = {
-  plugins: {
-+   'postcss-obfuscate-custom-properties': {},
-    autoprefixer: {},
-  },
+	plugins: {
++       'postcss-obfuscate-custom-properties': {},
+		autoprefixer: {}
+	},
 };
 ```
 
+## Options
+
+| Option | Type     | Default  | Description                                        |
+| ------ | -------- | -------- | -------------------------------------------------- |
+| enable | boolean  | true     | Enable or disable the obfuscation.                 |
+| length | number   | 6        | Character length (max. 32 characters)length.       |
+| method | string   | "random" | "random" or "none" obfuscation method for classes. |
+| prefix | string   | ""       | Prefix for custom properties.                      |
+| suffix | string   | ""       | Suffix for custom properties.                      |
+| ignore | string[] | []       | Array of custom properties to ignore.              |
+| outpit | string   | ""       | Output destination for json files                  |
+
+## License
+
+This source code is released under the [MIT license.]
+
+[MIT license.]: https://opensource.org/licenses/MIT
 [official docs]: https://github.com/postcss/postcss#usage
