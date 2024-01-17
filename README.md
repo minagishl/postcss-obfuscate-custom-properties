@@ -44,21 +44,22 @@ module.exports = {
 
 ## Options
 
-| Option                     | Type                | Default                 | Description                                                    |
-| -------------------------- | ------------------- | ----------------------- | -------------------------------------------------------------- |
-| enable                     | boolean             | true                    | Enable or disable the obfuscation.                             |
-| length                     | number              | 6                       | Character length (max. 32 characters)length.                   |
-| method                     | string              | "random"                | "random" or "none" obfuscation method for classes.             |
-| prefix                     | string              | ""                      | Prefix for custom properties.                                  |
-| suffix                     | string              | ""                      | Suffix for custom properties.                                  |
-| ignore                     | string[]            | []                      | Array of custom properties to ignore.                          |
-| output                     | string              | ""                      | Obfuscated property list json file output destination          |
-| [NEW] speedPriority        | boolean             | false                   | Ignore all regular expressions and execute.                    |
-| [NEW] ignoreRegex          | string[]            | []                      | Regex to ignore.                                               |
-| [NEW] ignoreSelectors      | string[]            | []                      | Array of selectors to ignore.                                  |
-| [NEW] IgnoreSelectorsRegex | string[]            | []                      | Regex to ignore selectors.                                     |
-| [NEW] preRun               | () => Promise<void> | () => Promise.resolve() | What to do before running the plugin                           |
-| [NEW] callBack             | () => void          | function () {}          | Callback function to run after the plugin has finished running |
+| Option               | Type                | Default                 | Description                                                    |
+| -------------------- | ------------------- | ----------------------- | -------------------------------------------------------------- |
+| enable               | boolean             | true                    | Enable or disable the obfuscation.                             |
+| length               | number              | 6                       | Character length (max. 32 characters)length.                   |
+| method               | string              | "random"                | "random" or "none" obfuscation method for classes.             |
+| prefix               | string              | ""                      | Prefix for custom properties.                                  |
+| suffix               | string              | ""                      | Suffix for custom properties.                                  |
+| ignore               | string[]            | []                      | Array of custom properties to ignore.                          |
+| output               | string              | ""                      | Obfuscated property list json file output destination          |
+| speedPriority        | boolean             | false                   | Ignore all regular expressions and execute.                    |
+| ignoreRegex          | string[]            | []                      | Regex to ignore.                                               |
+| ignoreSelectors      | string[]            | []                      | Array of selectors to ignore.                                  |
+| IgnoreSelectorsRegex | string[]            | []                      | Regex to ignore selectors.                                     |
+| [new] hashAlgorithm  | string              | "sha256"                | Hash algorithm for obfuscation.                                |
+| preRun               | () => Promise<void> | () => Promise.resolve() | What to do before running the plugin                           |
+| callBack             | () => void          | function () {}          | Callback function to run after the plugin has finished running |
 
 ## License
 

@@ -15,6 +15,7 @@ type Options = {
   ignoreRegex?: string[];
   ignoreSelectors?: string[];
   ignoreSelectorsRegex?: string[];
+  hashAlgorithm?: string;
   preRun?: () => Promise<void>;
   callback?: () => void;
 };
@@ -39,6 +40,7 @@ const plugin = (opt: any = {}) => {
       const ignoreRegex = options.ignoreRegex || [];
       const ignoreSelectors = options.ignoreSelectors || [];
       const IgnoreSelectorsRegex = options.ignoreSelectorsRegex || [];
+      const hashAlgorithm = options.hashAlgorithm || 'sha256';
       const preRun = options.preRun || (() => Promise.resolve());
       const callback = options.callback || function () {};
 
@@ -57,6 +59,14 @@ const plugin = (opt: any = {}) => {
         if (!ignore[i].startsWith('--')) {
           ignore[i] = '--' + ignore[i];
         }
+      }
+
+      const validHashAlgorithms = ['md5', 'sha1', 'sha256', 'sha512'];
+
+      if (!validHashAlgorithms.includes(hashAlgorithm)) {
+        throw new Error(
+          `Invalid hashAlgorithm: ${hashAlgorithm}. Must be one of ${validHashAlgorithms.join(', ')}`
+        );
       }
 
       // Run preRun callback

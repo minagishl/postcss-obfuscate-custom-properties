@@ -10,6 +10,7 @@ const options = {
   // Options
   length: 6,
   method: 'random',
+  hashAlgorithm: 'sha512',
   // ignoreRegex: [/foreground$/],
   // ignoreSelectorsRegex: [/::after$/],
   // speedPriority: false,
