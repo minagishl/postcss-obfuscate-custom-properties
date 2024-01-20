@@ -36,8 +36,8 @@ and set this plugin in settings.
 ```diff
 module.exports = {
 	plugins: {
-+       'postcss-obfuscate-custom-properties': {},
-		autoprefixer: {}
+		autoprefixer: {},
++		'postcss-obfuscate-custom-properties': {},
 	},
 };
 ```
