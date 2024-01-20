@@ -20,8 +20,8 @@ This plugin replaces the names of CSS custom properties with hard-to-guess strin
 
 **Step 1:** Install plugin:
 
-```sh
-npm  install  --save-dev  postcss  postcss-obfuscate-custom-properties
+```bash
+npm install --save-dev postcss postcss-obfuscate-custom-properties
 ```
 
 **Step 2:** Check your project for existing PostCSS config: `postcss.config.js`
