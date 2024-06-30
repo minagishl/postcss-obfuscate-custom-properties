@@ -69,3 +69,7 @@
 ::before {
   --custom: 0 0% 100%;
 }
+
+.text {
+  color: hsl(var(--foreground) / 1);
+}

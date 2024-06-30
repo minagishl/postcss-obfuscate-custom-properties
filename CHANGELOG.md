@@ -2,6 +2,12 @@
 
 All changes to this project will be noted here.
 
+## [1.3.0] - 2024-06-30
+
+### Changed
+
+Refactoring to improve code maintainability
+
 ## [1.2.0] - 2024-01-18
 
 ### Added

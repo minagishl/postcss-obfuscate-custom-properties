@@ -20,88 +20,102 @@ type Options = {
   callback?: () => void;
 };
 
-const plugin = (opt: any = {}) => {
+const defaultOptions: Options = {
+  enable: true,
+  length: 6,
+  method: 'random',
+  prefix: '',
+  suffix: '',
+  ignore: [],
+  output: '',
+  inspect: false,
+  speedPriority: false,
+  ignoreRegex: [],
+  ignoreSelectors: [],
+  ignoreSelectorsRegex: [],
+  hashAlgorithm: 'sha256',
+  preRun: () => Promise.resolve(),
+  callback: () => {},
+};
+
+const validHashAlgorithms = ['md5', 'sha1', 'sha256', 'sha512'];
+
+const getRandomInt = (max: number) => Math.floor(Math.random() * max);
+
+const validateOptions = (options: Options) => {
+  if (options.length! > 64) {
+    throw new Error('Length must be less than or equal to 64');
+  }
+  if (!validHashAlgorithms.includes(options.hashAlgorithm!)) {
+    throw new Error(
+      `Invalid hashAlgorithm: ${options.hashAlgorithm}. Must be one of ${validHashAlgorithms.join(', ')}`
+    );
+  }
+};
+
+const prepareIgnoreList = (ignore: string[]) => {
+  return ignore.map((item) => (item.startsWith('--') ? item : `--${item}`));
+};
+
+const writeMappingToFile = (output: string, mapping: { [key: string]: string }) => {
+  let outputPath = path.join(process.cwd(), output);
+
+  if (!path.basename(outputPath).endsWith('.json')) {
+    outputPath += outputPath.endsWith('/') ? 'main.json' : '/main.json';
+  }
+
+  const dir = path.dirname(outputPath);
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  fs.writeFile(outputPath, JSON.stringify(mapping, null, 2), (err) => {
+    if (err) throw err;
+  });
+};
+
+const plugin = (opt: Options = {}) => {
   return {
     postcssPlugin: 'postcss-obfuscate-custom-properties',
-    Once(root: any) {
+    async Once(root: any) {
+      const options = { ...defaultOptions, ...opt };
+      validateOptions(options);
+
       const mapping: { [key: string]: string } = {};
-      const options: Options = opt;
+      const ignoreList = prepareIgnoreList(options.ignore!);
 
-      // Options
-      const enable = options.enable !== undefined ? options.enable : true;
-      const length = options.length || 6;
-      const method = options.method || 'random';
-      const prefix = options.prefix || '';
-      const suffix = options.suffix || '';
-      const ignore = options.ignore || [];
-      const output = options.output || '';
-      const inspect = options.inspect || false;
-      const speedPriority = options.speedPriority || false;
-      const ignoreRegex = options.ignoreRegex || [];
-      const ignoreSelectors = options.ignoreSelectors || [];
-      const IgnoreSelectorsRegex = options.ignoreSelectorsRegex || [];
-      const hashAlgorithm = options.hashAlgorithm || 'sha256';
-      const preRun = options.preRun || (() => Promise.resolve());
-      const callback = options.callback || function () {};
+      await options.preRun!();
 
-      // Validate options
-      if (length > 64) {
-        throw new Error('Length must be less than or equal to 64');
-      }
-
-      // Generate random integer
-      function getRandomInt(max: number) {
-        return Math.floor(Math.random() * max);
-      }
-
-      // Add '--' to ignore list
-      for (let i = 0; i < ignore.length; i++) {
-        if (!ignore[i].startsWith('--')) {
-          ignore[i] = '--' + ignore[i];
-        }
-      }
-
-      const validHashAlgorithms = ['md5', 'sha1', 'sha256', 'sha512'];
-
-      if (!validHashAlgorithms.includes(hashAlgorithm)) {
-        throw new Error(
-          `Invalid hashAlgorithm: ${hashAlgorithm}. Must be one of ${validHashAlgorithms.join(', ')}`
-        );
-      }
-
-      // Run preRun callback
-      preRun();
-
-      // First pass: collect custom properties and generate hashes
       root.walkRules((rule: any) => {
         if (
-          !ignoreSelectors.includes(rule.selector) &&
-          (speedPriority || !IgnoreSelectorsRegex.some((regex) => new RegExp(regex).test(rule.selector)))
+          !options.ignoreSelectors!.includes(rule.selector) &&
+          (options.speedPriority ||
+            !options.ignoreSelectorsRegex!.some((regex) => new RegExp(regex).test(rule.selector)))
         ) {
           rule.walkDecls((decl: any) => {
             if (
               decl.prop.startsWith('--') &&
-              enable &&
-              !ignore.includes(decl.prop) &&
-              (speedPriority || !ignoreRegex.some((regex) => new RegExp(regex).test(decl.prop)))
+              options.enable &&
+              !ignoreList.includes(decl.prop) &&
+              (options.speedPriority ||
+                !options.ignoreRegex!.some((regex) => new RegExp(regex).test(decl.prop)))
             ) {
-              // Length of hash characters
-              const hashLength = length - prefix.length - suffix.length;
+              const hashLength = options.length! - options.prefix!.length - options.suffix!.length;
 
-              // Hash method
-              if (method === 'random') {
-                if (!Object.prototype.hasOwnProperty.call(mapping, decl.prop)) {
+              if (options.method === 'random') {
+                if (!mapping.hasOwnProperty(decl.prop)) {
                   let hash;
                   do {
-                    hash = createHash('sha256')
+                    hash = createHash(options.hashAlgorithm!)
                       .update(decl.prop + getRandomInt(100))
                       .digest('hex')
                       .slice(0, hashLength);
-                  } while (Object.values(mapping).includes(`--${prefix + hash + suffix}`));
-                  mapping[decl.prop] = `--${prefix + hash + suffix}`;
+                  } while (Object.values(mapping).includes(`--${options.prefix! + hash + options.suffix!}`));
+                  mapping[decl.prop] = `--${options.prefix! + hash + options.suffix!}`;
                 }
               } else {
-                mapping[decl.prop] = '--' + prefix + decl.prop.substring(2) + suffix;
+                mapping[decl.prop] = `--${options.prefix! + decl.prop.substring(2) + options.suffix!}`;
               }
               decl.prop = mapping[decl.prop];
             }
@@ -109,49 +123,26 @@ const plugin = (opt: any = {}) => {
         }
       });
 
-      // Write mapping to file
-      if (output) {
-        let outputPath = path.join(process.cwd(), output);
-
-        // Check if outputPath ends with a .json file
-        if (!path.basename(outputPath).endsWith('.json')) {
-          // If outputPath ends with '/', append 'main.json'. Otherwise, append '/main.json'
-          outputPath += outputPath.endsWith('/') ? 'main.json' : '/main.json';
-        }
-
-        // Get the directory of outputPath
-        const dir = path.dirname(outputPath);
-
-        // If the directory does not exist, create it
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-
-        fs.writeFile(outputPath, JSON.stringify(mapping, null, 2), (err) => {
-          if (err) throw err;
-        });
+      if (options.output) {
+        writeMappingToFile(options.output, mapping);
       }
 
-      if (inspect) {
+      if (options.inspect) {
         console.log(mapping);
       }
 
-      // Compile regular expressions outside of the loop
       const regexes = Object.keys(mapping).map((original) => ({
         regex: new RegExp(`var\\(${original}\\)`, 'g'),
-        hash: mapping[original as keyof typeof mapping],
+        hash: mapping[original],
       }));
 
-      // Second pass: replace usage in var() functions
       root.walkDecls((decl: any) => {
         for (const { regex, hash } of regexes) {
-          if (regex.test(decl.value)) {
-            decl.value = decl.value.replace(regex, `var(${hash})`);
-          }
+          decl.value = decl.value.replace(regex, `var(${hash})`);
         }
       });
 
-      callback();
+      options.callback!();
     },
   };
 };
