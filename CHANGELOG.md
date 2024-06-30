@@ -62,4 +62,4 @@ Optional features for this plug-in have been added
 [1.0.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.0.0
 [1.1.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.1.0
 [1.2.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.2.0
-[1.2.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.3.0
+[1.3.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.3.0
