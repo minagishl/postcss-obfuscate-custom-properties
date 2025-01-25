@@ -2,6 +2,13 @@
 
 All changes to this project will be noted here.
 
+## [1.4.0] - 2025-01-26
+
+### Changed
+
+- Upgrade dependencies: postcss, etc.
+- Refactoring to improve code maintainability
+
 ## [1.3.0] - 2024-06-30
 
 ### Changed
@@ -63,3 +70,4 @@ Optional features for this plug-in have been added
 [1.1.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.1.0
 [1.2.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.2.0
 [1.3.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.3.0
+[1.4.0]: https://www.npmjs.com/package/postcss-obfuscate-custom-properties/v/1.4.0
