@@ -2,6 +2,12 @@
 
 All changes to this project will be noted here.
 
+## [1.4.1] - 2025-01-26
+
+## Changed
+
+- Update peerDependencies to support postcss 8.x
+
 ## [1.4.0] - 2025-01-26
 
 ### Changed

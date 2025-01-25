@@ -1,6 +1,6 @@
 {
   "name": "postcss-obfuscate-custom-properties",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "This PostCSS plugin replaces the names of custom properties with hard-to-guess characters",
   "keywords": [
     "postcss",
@@ -25,7 +25,7 @@
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "postcss": "^8.4.27"
+    "postcss": "^8.1.0"
   },
   "devDependencies": {
     "@swc/cli": "^0.6.0",
