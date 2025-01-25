@@ -2,25 +2,25 @@ import { createHash } from 'crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-type Options = {
+interface PluginOptions {
   enable?: boolean;
   length?: number;
-  method?: string;
+  method?: 'random' | 'preserve';
   prefix?: string;
   suffix?: string;
   ignore?: string[];
   output?: string;
-  inspect?: boolean; // No description in readme.md
+  inspect?: boolean;
   speedPriority?: boolean;
   ignoreRegex?: string[];
   ignoreSelectors?: string[];
   ignoreSelectorsRegex?: string[];
-  hashAlgorithm?: string;
+  hashAlgorithm?: 'md5' | 'sha1' | 'sha256' | 'sha512';
   preRun?: () => Promise<void>;
   callback?: () => void;
-};
+}
 
-const defaultOptions: Options = {
+const DEFAULT_OPTIONS: PluginOptions = {
   enable: true,
   length: 6,
   method: 'random',
@@ -38,114 +38,130 @@ const defaultOptions: Options = {
   callback: () => {},
 };
 
-const validHashAlgorithms = ['md5', 'sha1', 'sha256', 'sha512'];
+class CustomPropertyObfuscator {
+  private options: PluginOptions;
+  private mapping: Map<string, string>;
+  private usedHashes: Set<string>;
 
-const getRandomInt = (max: number) => Math.floor(Math.random() * max);
-
-const validateOptions = (options: Options) => {
-  if (options.length! > 64) {
-    throw new Error('Length must be less than or equal to 64');
+  constructor(options: PluginOptions = {}) {
+    this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.validateOptions();
+    this.mapping = new Map();
+    this.usedHashes = new Set();
   }
-  if (!validHashAlgorithms.includes(options.hashAlgorithm!)) {
-    throw new Error(
-      `Invalid hashAlgorithm: ${options.hashAlgorithm}. Must be one of ${validHashAlgorithms.join(', ')}`
+
+  private validateOptions() {
+    if (this.options.length! > 64) {
+      throw new Error('Length must be ≤ 64');
+    }
+    if (!['md5', 'sha1', 'sha256', 'sha512'].includes(this.options.hashAlgorithm!)) {
+      throw new Error(`Invalid hash algorithm: ${this.options.hashAlgorithm}`);
+    }
+  }
+
+  private generateUniqueHash(input: string): string {
+    const hashLength = this.options.length! - this.options.prefix!.length - this.options.suffix!.length;
+
+    let hash: string;
+    do {
+      hash = createHash(this.options.hashAlgorithm!)
+        .update(input + Math.random())
+        .digest('hex')
+        .slice(0, hashLength);
+    } while (this.usedHashes.has(hash));
+
+    this.usedHashes.add(hash);
+    return `--${this.options.prefix! + hash + this.options.suffix!}`;
+  }
+
+  private shouldObfuscateSelector(selector: string): boolean {
+    if (this.options.ignoreSelectors!.includes(selector)) return false;
+
+    return (
+      this.options.speedPriority ||
+      !this.options.ignoreSelectorsRegex!.some((regex) => new RegExp(regex).test(selector))
     );
   }
-};
 
-const prepareIgnoreList = (ignore: string[]) => {
-  return ignore.map((item) => (item.startsWith('--') ? item : `--${item}`));
-};
+  private shouldObfuscateProperty(prop: string): boolean {
+    if (!prop.startsWith('--') || !this.options.enable) return false;
 
-const writeMappingToFile = (output: string, mapping: { [key: string]: string }) => {
-  let outputPath = path.join(process.cwd(), output);
+    const ignoredProps = this.options.ignore!.map((item) => (item.startsWith('--') ? item : `--${item}`));
 
-  if (!path.basename(outputPath).endsWith('.json')) {
-    outputPath += outputPath.endsWith('/') ? 'main.json' : '/main.json';
+    if (ignoredProps.includes(prop)) return false;
+
+    return (
+      this.options.speedPriority || !this.options.ignoreRegex!.some((regex) => new RegExp(regex).test(prop))
+    );
   }
 
-  const dir = path.dirname(outputPath);
+  private processCustomProperties(root: any) {
+    root.walkRules((rule: any) => {
+      if (!this.shouldObfuscateSelector(rule.selector)) return;
 
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+      rule.walkDecls((decl: any) => {
+        if (!this.shouldObfuscateProperty(decl.prop)) return;
+
+        const newProp =
+          this.options.method === 'random'
+            ? this.generateUniqueHash(decl.prop)
+            : `--${this.options.prefix! + decl.prop.substring(2) + this.options.suffix!}`;
+
+        this.mapping.set(decl.prop, newProp);
+        decl.prop = newProp;
+      });
+    });
   }
 
-  fs.writeFile(outputPath, JSON.stringify(mapping, null, 2), (err) => {
-    if (err) throw err;
-  });
-};
+  private updateVariableReferences(root: any) {
+    const regexes = Array.from(this.mapping.entries()).map(([original, hash]) => ({
+      regex: new RegExp(`var\\(${original}\\)`, 'g'),
+      hash,
+    }));
 
-const plugin = (opt: Options = {}) => {
-  return {
-    postcssPlugin: 'postcss-obfuscate-custom-properties',
-    async Once(root: any) {
-      const options = { ...defaultOptions, ...opt };
-      validateOptions(options);
-
-      const mapping: { [key: string]: string } = {};
-      const ignoreList = prepareIgnoreList(options.ignore!);
-
-      await options.preRun!();
-
-      root.walkRules((rule: any) => {
-        if (
-          !options.ignoreSelectors!.includes(rule.selector) &&
-          (options.speedPriority ||
-            !options.ignoreSelectorsRegex!.some((regex) => new RegExp(regex).test(rule.selector)))
-        ) {
-          rule.walkDecls((decl: any) => {
-            if (
-              decl.prop.startsWith('--') &&
-              options.enable &&
-              !ignoreList.includes(decl.prop) &&
-              (options.speedPriority ||
-                !options.ignoreRegex!.some((regex) => new RegExp(regex).test(decl.prop)))
-            ) {
-              const hashLength = options.length! - options.prefix!.length - options.suffix!.length;
-
-              if (options.method === 'random') {
-                if (!mapping.hasOwnProperty(decl.prop)) {
-                  let hash;
-                  do {
-                    hash = createHash(options.hashAlgorithm!)
-                      .update(decl.prop + getRandomInt(100))
-                      .digest('hex')
-                      .slice(0, hashLength);
-                  } while (Object.values(mapping).includes(`--${options.prefix! + hash + options.suffix!}`));
-                  mapping[decl.prop] = `--${options.prefix! + hash + options.suffix!}`;
-                }
-              } else {
-                mapping[decl.prop] = `--${options.prefix! + decl.prop.substring(2) + options.suffix!}`;
-              }
-              decl.prop = mapping[decl.prop];
-            }
-          });
-        }
-      });
-
-      if (options.output) {
-        writeMappingToFile(options.output, mapping);
+    root.walkDecls((decl: any) => {
+      for (const { regex, hash } of regexes) {
+        decl.value = decl.value.replace(regex, `var(${hash})`);
       }
+    });
+  }
 
-      if (options.inspect) {
-        console.log(mapping);
-      }
+  private writeMappingToFile() {
+    if (!this.options.output) return;
 
-      const regexes = Object.keys(mapping).map((original) => ({
-        regex: new RegExp(`var\\(${original}\\)`, 'g'),
-        hash: mapping[original],
-      }));
+    const mappingObject = Object.fromEntries(this.mapping);
+    const outputPath = path.resolve(
+      process.cwd(),
+      this.options.output.endsWith('.json')
+        ? this.options.output
+        : path.join(this.options.output, 'main.json')
+    );
 
-      root.walkDecls((decl: any) => {
-        for (const { regex, hash } of regexes) {
-          decl.value = decl.value.replace(regex, `var(${hash})`);
-        }
-      });
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, JSON.stringify(mappingObject, null, 2));
+  }
 
-      options.callback!();
-    },
-  };
-};
+  public async process(root: any) {
+    await this.options.preRun!();
+    this.processCustomProperties(root);
+    this.updateVariableReferences(root);
+
+    if (this.options.inspect) {
+      console.log(Object.fromEntries(this.mapping));
+    }
+
+    this.writeMappingToFile();
+    this.options.callback!();
+  }
+}
+
+const plugin = (opt: PluginOptions = {}) => ({
+  postcssPlugin: 'postcss-obfuscate-custom-properties',
+  async Once(root: any) {
+    const obfuscator = new CustomPropertyObfuscator(opt);
+    await obfuscator.process(root);
+  },
+});
 
 plugin.postcss = true;
 export = plugin;
